@@ -1,0 +1,2 @@
+ccan/antithread/alloc-Makefile: ccan/antithread/alloc/alloc.c ccan/antithread/alloc/alloc.h ccan/antithread/alloc/bitops.c ccan/antithread/alloc/bitops.h ccan/antithread/alloc/tiny.c ccan/antithread/alloc/tiny.h ccan/antithread/alloc/_info
+ccan/antithread/alloc.o: ccan/antithread/alloc/alloc.o ccan/antithread/alloc/bitops.o ccan/antithread/alloc/tiny.o
