@@ -1,11 +1,15 @@
 #include "ccan/asort/asort.h" 
 #include "ccan/darray/darray.h"
+#include "ccan/antithread/alloc/alloc.h"
 #include <stdio.h>
 
 // Simple implementation of dirsize report utility - no optimisation
 
 // Identifies the 10 largest directories on the filesystem (over 10MB)
 // Operates on the output of: sudo du -Sk /
+
+#define BUFSIZE 80
+#define MEMSIZE 1024*1024*128
 
 typedef struct {
     int size;
@@ -17,17 +21,15 @@ static int cmp(const sized_path *a, const sized_path *b, const int *asc)
     return asc ? (a->size > b->size) - (a->size < b->size) : (a->size < b->size) - (a->size > b->size);
 }
 
-// TODO: there's a defect here somewhere that dumps garbage to the screen, find and fix
-// Probably a memory leak or dodgy pointer
 int main() 
 {
-    //size_of_paths = [] //ccan darray
-    const char BUFSIZE = 80;
     char buffer[BUFSIZE];
+    static char memblock[MEMSIZE];
 
     int *size;
     char *path; 
-    sized_path *sized_path_ptr;
+    sized_path sp;
+    sized_path *sp_ptr;
 
     int sort_asc = 1;
     int i;
@@ -35,38 +37,39 @@ int main()
     FILE *fp;
     darray(sized_path) size_of_paths = darray_new();
 
-    sized_path_ptr = malloc(sizeof(sized_path));
-    sized_path_ptr->path = malloc(BUFSIZE);
+    alloc_init(memblock, MEMSIZE);
+
+    sp.path = alloc_get(memblock, MEMSIZE, BUFSIZE, 0);
 
     fp = fopen("dirsizes", "r");
 
     while (fgets(buffer, BUFSIZE, fp) != 0) {
+        // TODO: modify to handle more than BUFSIZE bytes
         if(buffer[4] >= '0' && buffer[4] <= '9') {
-            // TODO: deal with lines >80 characters long
-            sscanf(buffer, "%d %[^\n]", &(sized_path_ptr->size), sized_path_ptr->path);
-            if (sized_path_ptr->size > 10240) {
-                darray_append(size_of_paths, *sized_path_ptr);
-                
+            sscanf(buffer, "%d %[^\n]", &(sp.size), sp.path);
+            if (sp.size > 10240) {
+                darray_append(size_of_paths, sp);
                 // Allocate new memory for next read
-                sized_path_ptr = malloc(sizeof(sized_path));
-                sized_path_ptr->path = malloc(BUFSIZE);
+                sp.path = alloc_get(memblock, MEMSIZE, BUFSIZE, 0);
             }
         }
     }
 
-    free(sized_path_ptr->path);
-    free(sized_path_ptr);
+    alloc_free(memblock, MEMSIZE, sp.path);
 
     fclose(fp);
 
     asort(size_of_paths.item, size_of_paths.size, cmp, &sort_asc);
 
     i = 0;
-    darray_foreach_reverse(sized_path_ptr, size_of_paths) {
-        printf("%s (%d MB)\n", sized_path_ptr->path, sized_path_ptr->size / 1024);
+    darray_foreach_reverse(sp_ptr, size_of_paths) {
+        printf("%s (%d MB)\n", sp_ptr->path, sp_ptr->size / 1024);
         i++;
         if(i == 10) break;
     }
+
+    // TODO: needs to use alloc_free
+    //darray_free(size_of_paths);
 
     return 0;
 }
