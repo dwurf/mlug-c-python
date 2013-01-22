@@ -1,5 +1,6 @@
 #include "ccan/asort/asort.h" 
 #include "ccan/darray/darray.h"
+#include "ccan/antithread/alloc/alloc.h"
 #include <stdio.h>
 
 // Simple implementation of dirsize report utility - no optimisation
@@ -8,6 +9,7 @@
 // Operates on the output of: sudo du -Sk /
 
 #define BUFSIZE 80
+#define MEMSIZE 1024*1024*128
 
 typedef struct {
     int size;
@@ -22,6 +24,7 @@ static int cmp(const sized_path *a, const sized_path *b, const int *asc)
 int main() 
 {
     char buffer[BUFSIZE];
+    static char memblock[MEMSIZE];
 
     int *size;
     char *path; 
@@ -34,25 +37,25 @@ int main()
     FILE *fp;
     darray(sized_path) size_of_paths = darray_new();
 
-    sp.path = malloc(BUFSIZE);
+    alloc_init(memblock, MEMSIZE);
+
+    sp.path = alloc_get(memblock, MEMSIZE, BUFSIZE, 0);
 
     fp = fopen("dirsizes", "r");
 
     while (fgets(buffer, BUFSIZE, fp) != 0) {
-        // Simple optimisation to avoid excessive string handling
+        // TODO: modify to handle more than BUFSIZE bytes
         if(buffer[4] >= '0' && buffer[4] <= '9') {
-            // TODO: modify to handle more than BUFSIZE bytes
             sscanf(buffer, "%d %[^\n]", &(sp.size), sp.path);
             if (sp.size > 10240) {
                 darray_append(size_of_paths, sp);
-                
                 // Allocate new memory for next read
-                sp.path = malloc(BUFSIZE);
+                sp.path = alloc_get(memblock, MEMSIZE, BUFSIZE, 0);
             }
         }
     }
 
-    free(sp.path);
+    alloc_free(memblock, MEMSIZE, sp.path);
 
     fclose(fp);
 
@@ -65,10 +68,8 @@ int main()
         if(i == 10) break;
     }
 
-    darray_foreach(sp_ptr, size_of_paths)
-        free(sp_ptr->path);
-
-    darray_free(size_of_paths);
+    // TODO: needs to use alloc_free
+    //darray_free(size_of_paths);
 
     return 0;
 }
