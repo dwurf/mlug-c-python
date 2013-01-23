@@ -31,4 +31,6 @@ def read_size_list(du_file):
             print '%s (%d MB)' % (size_of_paths[-i].path, size_of_paths[-i].size)
 
 if __name__ == '__main__':
-    read_size_list('dirsizes')
+    #read_size_list('dirsizes')
+    import profile
+    profile.run('read_size_list("dirsizes")')

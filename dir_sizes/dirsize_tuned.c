@@ -1,11 +1,17 @@
-#include "ccan/asort/asort.h" 
-#include "ccan/darray/darray.h"
-#include <stdio.h>
-
-// Simple implementation of dirsize report utility - no optimisation
+// Simple implementation of dirsize report utility - minimal optimisation
 
 // Identifies the 10 largest directories on the filesystem (over 10MB)
 // Operates on the output of: sudo du -Sk /
+
+// NOTE: This is not an example of good C code. Error handling is non-existent.
+
+#include <stdio.h>
+#include <string.h>
+
+// Uses the Comprehensive C Archive Network implementations of sort and
+// dynamic arrays
+#include "ccan/asort/asort.h" 
+#include "ccan/darray/darray.h"
 
 #define BUFSIZE 80
 
@@ -14,6 +20,7 @@ typedef struct {
     char *path;
 } sized_path;
 
+// For use with the asort() function
 static int cmp(const sized_path *a, const sized_path *b, const int *asc)
 {
     return asc ? (a->size > b->size) - (a->size < b->size) : (a->size < b->size) - (a->size > b->size);
@@ -40,8 +47,8 @@ int main()
 
     while (fgets(buffer, BUFSIZE, fp) != 0) {
         // Simple optimisation to avoid excessive string handling
-        if(buffer[4] >= '0' && buffer[4] <= '9') {
-            // TODO: modify to handle more than BUFSIZE bytes
+        if(strlen(buffer) >= 5 && buffer[4] >= '0' && buffer[4] <= '9') {
+            // TODO: modify to handle more than BUFSIZE bytes per line
             sscanf(buffer, "%d %[^\n]", &(sp.size), sp.path);
             if (sp.size > 10240) {
                 darray_append(size_of_paths, sp);
