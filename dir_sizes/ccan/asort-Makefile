@@ -1,2 +1,2 @@
-ccan/asort-Makefile: ccan/asort/asort.c ccan/asort/asort.h ccan/asort/_info
+ccan/asort-Makefile: ccan/asort/asort.c ccan/asort/asort.h ccan/asort/config.h ccan/asort/_info
 ccan/asort.o: ccan/asort/asort.o

@@ -1,0 +1,13 @@
+.*.swp
+*.pyc
+gmon.out
+*.o
+*/ccan/*.d
+tarballs
+dir_sizes/ccan/configurator
+dir_sizes/dirsizes
+dir_sizes/libccan.a
+gis/suburbs.zip
+*.osm
+*.sqlite
+
