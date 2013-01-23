@@ -44,7 +44,7 @@ update osm_ways set "Geometry" = (
             4326
         )
     from 
-        osm_way_node_refs wn,
+        osm_way_refs wn,
         osm_nodes n
     where wn.node_id = n.node_id
     and wn.way_id = osm_ways.way_id
@@ -55,3 +55,33 @@ update osm_ways set "Geometry" = (
 
 EOF
 
+
+# This method is for older ubuntus that use the old spatialite_osm_raw schema
+#spatialite "${osm_base}".sqlite << EOF
+#select AddGeometryColumn('osm_ways', 'Geometry', 4326, 'LINESTRING', 'XY');
+#select AddGeometryColumn('osm_relations', 'Geometry', 4326, 'GEOMETRYCOLLECTION', 'XY');
+#update osm_ways set "Geometry" = (
+#    select 
+#        LineFromText(
+#            replace(
+#                replace(
+#                    group_concat(st_astext(n.geometry)), 
+#                    '),POINT(',
+#                    ', '
+#                ),
+#                'POINT',
+#                'LINESTRING'
+#            ),
+#            4326
+#        )
+#    from 
+#        osm_way_node_refs wn,
+#        osm_nodes n
+#    where wn.node_id = n.node_id
+#    and wn.way_id = osm_ways.way_id
+#    group by wn.way_id 
+#)
+#;
+#-- skipping relations for now, they're a very complex type
+#
+#EOF
